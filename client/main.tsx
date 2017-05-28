@@ -23,6 +23,9 @@ const GetMyStatus_timeout = 10000;
 function GetActiveCurrencyPair() {
     return "XETHZEUR"
 }
+function GetCoinCurrency() {
+    return "XETH";
+}
 
 function CancelOrder(orderid: string, callback: any, refresh = true) {
     socket.emit('cancel-order', { orderid: orderid, responseChannel: 'cancel-order-res'} as SocketContracts.CancelOrder);
@@ -33,7 +36,7 @@ function CancelOrder(orderid: string, callback: any, refresh = true) {
 }
 
 function MoveOrderInPrice(currBook: SocketContracts.DepthEntry[], myOrderId: string, nxtprice: number) {
-    var tradevol = myOrders[myOrderId].vol;
+    var tradevol = myOrders[myOrderId].vol - myOrders[myOrderId].vol_exec;
 
     var ordervol:any = 0;
     if (ordervol = prompt("Enter volume to move the " + myOrders[myOrderId].descr.type + " @ price "
@@ -102,7 +105,7 @@ function PlaceLimitOrder(type: string, volume: number, limit: number, callback: 
         responseChannel: 'place-order-res'} as SocketContracts.PlaceOrder);
     socket.once('place-order-res', (res: any) => {
         if (res.status == StatusCode.OK) {
-            $("<div>").text(type + " " + volume + " @ "+ limit).appendTo($("#temp-history"));
+            $("<div>").text(type + " " + volume + " @ "+ limit).prependTo($("#temp-history"));
         }
         callback(res);
         UpdateBookings();
@@ -137,7 +140,7 @@ function init() {
                     p2.css("text-align", "center");
                     if (myOrders[selMyOrderId] && myOrders[selMyOrderId].vol > 0) {
                         var up = $("<span>").html("&#x25B2; ").appendTo(p2);
-                        $("<span>").text(parseFloat(myOrders[selMyOrderId].vol).toFixed(2) + "").appendTo(p2);
+                        $("<span>").text((parseFloat(myOrders[selMyOrderId].vol) - parseFloat(myOrders[selMyOrderId].vol_exec)).toFixed(2) + "").appendTo(p2);
                         var down = $("<span>").html(" &#x25BC;").appendTo(p2);
                         var cancel = $("<span>").css("color", "blue").text(" X").appendTo(p2);
 
@@ -186,6 +189,10 @@ function init() {
         socket.once('get-my-status-res', (res: any) => {
             if (res.status == StatusCode.OK) {
                $("#my-status").html(JSON.stringify(res.result, undefined, 2));
+               $("<br>").appendTo("#my-status");
+               $("<span>").text("EUR+EUR(" + GetActiveCurrencyPair() + ") = "
+                + (parseFloat(res.result.ZEUR) + cheapestSell * parseFloat(res.result[GetCoinCurrency()]))
+                ).appendTo("#my-status");
             }
 
             if (refresh) {
@@ -209,9 +216,9 @@ function init() {
                 for (var id in res.result['open']) {
                     var add = (key: string, entry: any) => {
                         isEmpty = false;
-                        $("<div>").html(id + ": " + entry.descr.order).appendTo($("#my-orders"));
+                        $("<div>").css("display", "inline-block").html(id + ": " + entry.descr.order).appendTo($("#my-orders"));
                         var del = $("<span>").css("display","inline-block").css("color", "red").css("cursor","pointer").text("  CANCEL ORDER").appendTo($("#my-orders"));
-                        $("<hr>").appendTo($("#my-orders"));
+                        $("<br>").appendTo($("#my-orders"));
 
                         del.click(() => {
                             CancelOrder(key , () => {

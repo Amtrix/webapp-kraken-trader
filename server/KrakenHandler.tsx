@@ -103,6 +103,7 @@ export namespace KrakenHandler {
 
     export function PlaceOrder(params: SocketContracts.PlaceOrder, callback: any) {
         GetLock(() => {
+            console.log("[" + params.type + "]Order: " + params.type + " " + params.volume + "  @ " +  params.limit);
             kraken.api('AddOrder', {
                 pair: params.pair,
                 type: params.type,
