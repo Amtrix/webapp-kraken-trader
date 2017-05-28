@@ -12,3 +12,6 @@ Post Issues if more is needed -- not much motivation on my side to do an install
 
 <h2>Build client and server + Run server</h2>
 <pre>gulp client-all && tsc --project server && node build/server/main.js</pre>
+
+<h1>Preview:</h1>
+<img src="http://i.imgur.com/CtWukyl.png" width="100%"></img>
