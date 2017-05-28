@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "module": "amd",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "outDir": "../build/client",
+        "sourceMap": true,
+        "jsx": "react",
+        "moduleResolution": "node"
+    },
+
+    "files": [
+        "main.tsx"
+    ]
+}
