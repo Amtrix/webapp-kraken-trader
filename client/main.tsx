@@ -7,7 +7,8 @@ import { SocketContracts, StatusCode } from "../shared/contracts";
 var socket: SocketIOClient.Socket;
 var cheapestSell = 1e9;
 setInterval(() => {
-    $("#fees").html("For price " + cheapestSell + " fees are: " + (cheapestSell * 0.01*0.22));
+    var fee = (cheapestSell * 0.01*0.22);
+    $("#fees").html("For price " + cheapestSell + " fees are: " + fee + "(x2 = " + (2*fee) + ")");
 }, 1000);
 
 
@@ -115,12 +116,14 @@ function PlaceLimitOrder(type: string, volume: number, limit: number, callback: 
 function init() {
     UpdateBookings = (refresh = false) => {
         socket.emit('get-bookings', { pair: GetActiveCurrencyPair(),
-            count: 18 , responseChannel: 'get-bookings-res'} as SocketContracts.GetBookings);
+            count: 30 , responseChannel: 'get-bookings-res'} as SocketContracts.GetBookings);
         
-        cheapestSell = 1e9;
+        
         socket.once('get-bookings-res', (res: SocketContracts.Depth) => {
             if (res.status == StatusCode.OK) {
                 $("#bookings").html("");
+
+                var newCheapestSell = 1e9;
                 var insertEntry = (entry: SocketContracts.DepthEntry) => {
                     var selMyOrderId: string = null;
                     for (var id in myOrders) {
@@ -163,7 +166,7 @@ function init() {
                     p3.text(entry.volume);
 
                     if (entry.type == 'sell')
-                        cheapestSell = Math.min(cheapestSell, entry.price);
+                        newCheapestSell = Math.min(newCheapestSell, entry.price);
                     
                     if (entry.type == 'buy') elem.css("background-color", "green");
                     else elem.css("background-color", "red");
@@ -174,6 +177,7 @@ function init() {
                 for (var i = 0; i < res.result.length; ++i) {
                     insertEntry(res.result[i]);
                 }
+                cheapestSell = newCheapestSell;
             }
 
             console.log("REFRESH: " + refresh);
