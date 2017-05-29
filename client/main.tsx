@@ -5,7 +5,7 @@ import * as ReactDOM from "react-dom";
 import { SocketContracts, StatusCode } from "../shared/contracts";
 
 var socket: SocketIOClient.Socket;
-var cheapestSell = 55555;
+var cheapestSell = 1e9;
 setInterval(() => {
     $("#fees").html("For price " + cheapestSell + " fees are: " + (cheapestSell * 0.01*0.22));
 }, 1000);
@@ -116,6 +116,8 @@ function init() {
     UpdateBookings = (refresh = false) => {
         socket.emit('get-bookings', { pair: GetActiveCurrencyPair(),
             count: 18 , responseChannel: 'get-bookings-res'} as SocketContracts.GetBookings);
+        
+        cheapestSell = 1e9;
         socket.once('get-bookings-res', (res: SocketContracts.Depth) => {
             if (res.status == StatusCode.OK) {
                 $("#bookings").html("");
