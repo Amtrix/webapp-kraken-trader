@@ -22,7 +22,7 @@ var sharedsession = require("express-socket.io-session");
 
 type Socket = SocketIO.Socket;
 
-var PORT: number = process.env.PORT || 8090;
+var PORT: number = process.env.PORT || 8312;
 var app = Express();
 var server = require("http").createServer(app);
 var io = socketio.listen(server);
@@ -105,8 +105,17 @@ io.on('connection', (socket: SocketIO.Socket) => {
             socket.emit(params.responseChannel, res);
         });
     }); 
+
+    
+    socket.on('get-my-trade-balance', (params: SocketContracts.GetMyTradeBalance) => {
+        console.log("cmd: get-my-trade-balance");
+        KrakenHandler.GetMyTradeBalance(params, (res: any) => {
+            console.log("cmd: get-my-trade-balance: " + res.status);
+            socket.emit(params.responseChannel, res);
+        });
+    }); 
 });
 
 
 console.log("Server started at port: " + PORT);
-server.listen(PORT);
+server.listen(PORT, "127.0.0.1");

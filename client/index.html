@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Gamepad</title>
+    <title>EasyTrader</title>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 
     <link href="/css/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
@@ -19,41 +19,68 @@
 </head>
 
 <body>
-    <div id="bookings" style="width: 25%; height: 100%; float: left;">
-    </div>
-    <div id="hub" style="width: 75%; height: 100%; float: left; padding: 5px;">
-        <div style="color: white" id="fees"></div>
-        <pre id="my-orders" style="max-height: 270px">
-        </pre>
+    <div style="display: inline-flex; flex-direction: row; width: 100%; position: fixed; left: 0px; right:0px; top: 0px; bottom: 0px;">
+        <div style="width: 25%; min-width: 300px; height:100%;  ">
+            <div class="niceBox" style="margin: 3px">
+                <form>
+                    <label>
+                        <span>#book entries:</span>
+                        <input class="form-control" type="text" style="width: 120px" id="booking-size"/>
+                        
+                        <span>pair code:</span>
+                        <input class="form-control" type="text" style="width: 120px" id="pair-code"/>
 
-        <pre id="my-status">
-        </pre>
+                        <span>my asset:</span>
+                        <input class="form-control" type="text" style="width: 120px" id="asset-code"/>
+                    </label>
+                    <div style="clear: both"></div>
+                </form>
+            </div>
 
-        <div class="niceBox">
-            <form>
-                <h3>Place order</h3>
-                <label>
-                    <span>Type (sell or buy):</span>
-                    <input type="text" id="order-type"/>
-                </label>
-                <label>
-                    <span>Volume:</span>
-                    <input type="text" value="" id="order-volume" />
-                </label>
-                <label>
-                    <span>Limit:</span>
-                    <input type="text" id="order-limit" />
-                </label>
-                <label>
-                    <span>SUM:</span>
-                    <input type="text" id="order-sum" disabled/>
-
-                <input id="order-btn" style="float: right" class="btn btn-form" type="button" value="Order" />
-                <div style="clear: both"></div>
-            </form>
+            <div id="bookings" style="width: 98%; overflow-y: auto; overflow-x: no-scroll; height: 71%; margin: 3px;">
+            </div>
         </div>
+        <div id="hub" style="width: 75%; height: 100%; padding: 5px; flex-grow: 1; overflow-y: auto;">
+            <div style="color: white" id="fees"></div>
+            <pre id="my-orders" style="max-height: 270px">
+            </pre>
 
-        <div id="temp-history" class="niceBox">
+            <pre id="my-status">
+            </pre>
+
+            <div class="niceBox">
+                <form>
+                    <h3>Place order</h3>
+                    <label>
+                        <span>Type (sell or buy):</span>
+                        <input class="form-control" type="text" id="order-type"/>
+                    </label>
+                    <label>
+                        <span>Volume:</span>
+                        <input class="form-control" type="text" value="" id="order-volume" />
+                    </label>
+                    <label>
+                        <span>Limit:</span>
+                        <input class="form-control" type="text" id="order-limit" />
+                    </label>
+                    <label>
+                        <span>SUM:</span>
+                        <input class="form-control" type="text" id="order-sum" disabled/>
+
+                    <input id="order-btn" style="float: right" class="btn btn-form" type="button" value="Order" />
+                    <div style="clear: both"></div>
+                </form>
+            </div>
+
+            <div class="niceBox">
+                <h3>Placed orders in this session:</h3>
+                <div id="temp-history">
+                </div>
+            </div>
+
+            <div class="niceBox">
+                <iframe id="pair-stat" style="height: 350px; width: 100%;" src="https://dwq4do82y8xi7.cloudfront.net/widgetembed/?XRPEUR&interval=D&symboledit=1&toolbarbg=f1f3f6&hideideas=1&studies=&theme=Black&style=1&timezone=exchange"></iframe>
+            </div>
         </div>
     </div>
 </body>

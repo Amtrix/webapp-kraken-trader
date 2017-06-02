@@ -29,6 +29,10 @@ export namespace SocketContracts {
         limit: number;
         volume: number;
     }
+
+    export interface GetMyTradeBalance extends SocketContract {
+        asset: string;
+    }
 }
 
 export enum StatusCode {

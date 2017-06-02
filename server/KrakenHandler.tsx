@@ -60,7 +60,7 @@ export namespace KrakenHandler {
 
                 if(error) {
                     console.log(error);
-                    callback({status: StatusCode.FAIL, error: error});
+                    callback({status: StatusCode.FAIL, error: error.toString()});
                 }
                 else {
                     callback({status: StatusCode.OK, result: data.result});
@@ -76,7 +76,7 @@ export namespace KrakenHandler {
 
                 if (error) {
                     console.log(error);
-                    callback({status: StatusCode.FAIL, error: error});
+                    callback({status: StatusCode.FAIL, error: error.toString()});
                 }
                 else {
                     callback({status: StatusCode.OK, result: data.result});
@@ -92,7 +92,7 @@ export namespace KrakenHandler {
 
                 if (error) {
                     console.log(error);
-                    callback({status: StatusCode.FAIL, error: error});
+                    callback({status: StatusCode.FAIL, error: error.toString()});
                 }
                 else {
                     callback({status: StatusCode.OK, result: data});
@@ -115,10 +115,29 @@ export namespace KrakenHandler {
 
                 if (error) {
                     console.log(error);
-                    callback({status: StatusCode.FAIL, error: error});
+                    callback({status: StatusCode.FAIL, error: error.toString()});
                 }
                 else {
                     callback({status: StatusCode.OK, result: data});
+                }
+            });
+        });
+    }
+
+    
+    export function GetMyTradeBalance(params: SocketContracts.GetMyTradeBalance, callback: any) {
+        GetLock(() => {
+            kraken.api('TradeBalance', {
+                asset: params.asset
+            }, function(error: any, data: any) {
+                Unlock();
+
+                if (error) {
+                    console.log(error);
+                    callback({status: StatusCode.FAIL, error: error.toString()});
+                }
+                else {
+                    callback({status: StatusCode.OK, result: data.result});
                 }
             });
         });

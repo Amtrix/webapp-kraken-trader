@@ -6,10 +6,41 @@ import { SocketContracts, StatusCode } from "../shared/contracts";
 
 var socket: SocketIOClient.Socket;
 var cheapestSell = 1e9;
+var bookSize = 13;
+var currencypair = "XETHZEUR";
+var myasset = "ZEUR";
+
+const tradeviewurl = "https://dwq4do82y8xi7.cloudfront.net/widgetembed/?symbol=KRAKEN%3A%CODE&interval=D&symboledit=1&toolbarbg=f1f3f6&hideideas=1&studies=&theme=Black&style=1&timezone=exchange";
+
 setInterval(() => {
     var fee = (cheapestSell * 0.01*0.22);
-    $("#fees").html("For price " + cheapestSell + " fees are: " + fee + "(x2 = " + (2*fee) + ")");
-}, 1000);
+    if (cheapestSell < 1e9)
+        $("#fees").html("For price " + cheapestSell + " fees are: " + fee + "(x2 = " + (2*fee) + ")");
+    
+    var cnt = $("#booking-size").val();
+    var cnti = parseInt(cnt);
+
+    if (cnti) bookSize = cnti;
+
+    var pcode = $("#pair-code").val();
+    if (pcode.length > 2) {
+        if (pcode != currencypair) { $("#bookings").html(""); bookings = null; }
+        currencypair = pcode;
+    }
+
+    var acode = $("#asset-code").val();
+    if (acode.length > 1) {
+        if (myasset != acode) myTradeBalance = null;
+        myasset = acode;
+    }
+
+    var tradeviewpair = currencypair.substr(1, 3) + currencypair.substr(5, 3);
+    var tradeview = tradeviewurl.replace("%CODE", tradeviewpair);
+    var currtradeview = $("#pair-stat").attr("src");
+    if (currtradeview != tradeview) {
+        $("#pair-stat").attr("src", tradeview);
+    }
+}, 100);
 
 
 var UpdateBookings: any = null;
@@ -20,12 +51,15 @@ var currBook: any = {};
 const UpdateBookings_timeout = 5000;
 const GetMyOrders_timeout = 10000;
 const GetMyStatus_timeout = 10000;
+const GetMyTradeBalance_timeout = 10000;
+
+
 
 function GetActiveCurrencyPair() {
-    return "XETHZEUR"
+    return currencypair;
 }
 function GetCoinCurrency() {
-    return "XETH";
+    return currencypair.substr(0, 4);;
 }
 
 function CancelOrder(orderid: string, callback: any, refresh = true) {
@@ -113,71 +147,16 @@ function PlaceLimitOrder(type: string, volume: number, limit: number, callback: 
     });
 }
 
+var bookings: any = null;
+var myTradeBalance: any = null;
 function init() {
     UpdateBookings = (refresh = false) => {
         socket.emit('get-bookings', { pair: GetActiveCurrencyPair(),
-            count: 30 , responseChannel: 'get-bookings-res'} as SocketContracts.GetBookings);
-        
+            count: bookSize , responseChannel: 'get-bookings-res'} as SocketContracts.GetBookings);
         
         socket.once('get-bookings-res', (res: SocketContracts.Depth) => {
             if (res.status == StatusCode.OK) {
-                $("#bookings").html("");
-
-                var newCheapestSell = 1e9;
-                var insertEntry = (entry: SocketContracts.DepthEntry) => {
-                    var selMyOrderId: string = null;
-                    for (var id in myOrders) {
-                        if (Math.abs(myOrders[id].descr.price - entry.price) < 1e-9) {
-                            selMyOrderId = id;
-                        }
-                    }
-
-                    var elem = $("<div>").css("padding-left", "3px").css("padding-right", "3px");
-                    var p1 = $("<div>").css("display", "inline-block").appendTo(elem);
-                    var p2 = $("<div>").css("display", "inline-block").appendTo(elem);
-                    var p3 = $("<div>").css("display", "inline-block").appendTo(elem);
-                    $("<br>").appendTo(elem);
-
-                    p1.css("width", "40%");
-                    p2.css("width", "30%");
-                    p3.css("width", "30%");
-                    p1.text(entry.price);
-                    p2.css("text-align", "center");
-                    if (myOrders[selMyOrderId] && myOrders[selMyOrderId].vol > 0) {
-                        var up = $("<span>").html("&#x25B2; ").appendTo(p2);
-                        $("<span>").text((parseFloat(myOrders[selMyOrderId].vol) - parseFloat(myOrders[selMyOrderId].vol_exec)).toFixed(2) + "").appendTo(p2);
-                        var down = $("<span>").html(" &#x25BC;").appendTo(p2);
-                        var cancel = $("<span>").css("color", "blue").text(" X").appendTo(p2);
-
-                        up.css("cursor", "pointer");
-                        down.css("cursor", "pointer");
-                        cancel.css("cursor", "pointer");
-                        down.click(() => { MoveOrderUpInPrice(res.result, selMyOrderId); });
-
-                        cancel.click(() => {
-                            CancelOrder(selMyOrderId, (res: any) => {
-                                alert(res.status == StatusCode.OK ? "OK" : "FAIL");
-                            });
-                        });
-
-                        up.click(() => { MoveOrderDownInPrice(res.result, selMyOrderId); });
-                    }
-                    p3.css("text-align", "right");
-                    p3.text(entry.volume);
-
-                    if (entry.type == 'sell')
-                        newCheapestSell = Math.min(newCheapestSell, entry.price);
-                    
-                    if (entry.type == 'buy') elem.css("background-color", "green");
-                    else elem.css("background-color", "red");
-                    elem.css("color", "white");
-                    $("#bookings").append(elem);
-                };
-
-                for (var i = 0; i < res.result.length; ++i) {
-                    insertEntry(res.result[i]);
-                }
-                cheapestSell = newCheapestSell;
+                bookings = res.result;
             }
 
             console.log("REFRESH: " + refresh);
@@ -187,18 +166,76 @@ function init() {
                 }, UpdateBookings_timeout);
             }
         });
-    
     }
+    setInterval(() => {
+        if (!bookings) return;
 
+        $("#bookings").html("");
+        var newCheapestSell = 1e9;
+        var insertEntry = (entry: SocketContracts.DepthEntry) => {
+            var selMyOrderId: string = null;
+            for (var id in myOrders) {
+                if (Math.abs(myOrders[id].descr.price - entry.price) < 1e-9) {
+                    selMyOrderId = id;
+                }
+            }
+
+            var elem = $("<div>").css("padding-left", "3px").css("padding-right", "3px");
+            var p1 = $("<div>").css("display", "inline-block").appendTo(elem);
+            var p2 = $("<div>").css("display", "inline-block").appendTo(elem);
+            var p3 = $("<div>").css("display", "inline-block").appendTo(elem);
+            $("<br>").appendTo(elem);
+
+            p1.css("width", "40%");
+            p2.css("width", "30%");
+            p3.css("width", "30%");
+            p1.text(entry.price);
+            p2.css("text-align", "center");
+            if (myOrders[selMyOrderId] && myOrders[selMyOrderId].vol > 0) {
+                var up = $("<span>").html("&#x25B2; ").appendTo(p2);
+                $("<span>").text((parseFloat(myOrders[selMyOrderId].vol) - parseFloat(myOrders[selMyOrderId].vol_exec)).toFixed(2) + "").appendTo(p2);
+                var down = $("<span>").html(" &#x25BC;").appendTo(p2);
+                var cancel = $("<span>").css("color", "blue").text(" X").appendTo(p2);
+
+                up.css("cursor", "pointer");
+                down.css("cursor", "pointer");
+                cancel.css("cursor", "pointer");
+                down.click(() => { MoveOrderUpInPrice(bookings, selMyOrderId); });
+
+                cancel.click(() => {
+                    CancelOrder(selMyOrderId, (res: any) => {
+                        alert(res.status == StatusCode.OK ? "OK" : "FAIL");
+                    });
+                });
+
+                up.click(() => { MoveOrderDownInPrice(bookings, selMyOrderId); });
+            }
+            p3.css("text-align", "right");
+            p3.text(entry.volume);
+
+            if (entry.type == 'sell')
+                newCheapestSell = Math.min(newCheapestSell, entry.price);
+            
+            if (entry.type == 'buy') elem.css("background-color", "green");
+            else elem.css("background-color", "red");
+            elem.css("color", "white");
+            $("#bookings").append(elem);
+        };
+
+        for (var i = 0; i < bookings.length; ++i) {
+            insertEntry(bookings[i]);
+        }
+        cheapestSell = newCheapestSell;
+    }, 500);
+
+
+    var myStatus: any = null;
     function GetMyStatus(refresh = false) {
         socket.emit('get-my-status', { responseChannel: 'get-my-status-res'} as SocketContracts.GetBookings);
         socket.once('get-my-status-res', (res: any) => {
             if (res.status == StatusCode.OK) {
-               $("#my-status").html(JSON.stringify(res.result, undefined, 2));
-               $("<br>").appendTo("#my-status");
-               $("<span>").text("EUR+EUR(" + GetActiveCurrencyPair() + ") = "
-                + (parseFloat(res.result.ZEUR) + cheapestSell * parseFloat(res.result[GetCoinCurrency()]))
-                ).appendTo("#my-status");
+               myStatus = res.result;
+               
             }
 
             if (refresh) {
@@ -208,6 +245,18 @@ function init() {
             }
         });
     }
+    setInterval(() => {
+        if (!myStatus) return;
+
+        $("#my-status").html(JSON.stringify(myStatus, undefined, 2).replace(/\"/g, ""));
+        $("<br>").appendTo("#my-status");
+
+        if (myTradeBalance) {
+            $("<span>").text("Asset value (" + myasset + ") = "
+                + (parseFloat(myTradeBalance.e))
+                ).appendTo("#my-status");
+        }
+    }, 500);
 
     
 
@@ -246,6 +295,22 @@ function init() {
         });
     }
 
+    function GetMyTradeBalance(refresh = false) {
+        socket.emit('get-my-trade-balance', { asset: myasset, responseChannel: 'get-my-trade-balance-res'} as SocketContracts.GetMyTradeBalance);
+        socket.once('get-my-trade-balance-res', (res: any) => {
+            if (res.status == StatusCode.OK) {
+               myTradeBalance = res.result;
+            }
+
+            if (refresh) {
+                setTimeout(() => {
+                    GetMyTradeBalance(refresh);
+                }, GetMyTradeBalance_timeout);
+            }
+        });
+    }
+
+    GetMyTradeBalance(true);
     GetMyStatus(true);
     GetMyOrders(true);
     UpdateBookings(true);
@@ -256,6 +321,7 @@ function init() {
         var limit = $("#order-limit").val();
 
         PlaceLimitOrder(type, parseFloat(volume), parseFloat(limit), (res: any) => {
+            console.log(res);
             if (res.status != StatusCode.OK) alert("Error: " + res.error);
         });
     });
@@ -266,6 +332,10 @@ function init() {
         var limit = $("#order-limit").val();
         $("#order-sum").val(volume * limit);
     }, 300);
+
+    $("#booking-size").val(bookSize);
+    $("#pair-code").val(currencypair);
+    $("#asset-code").val(myasset);
 }
 
 $(document).ready(() => {

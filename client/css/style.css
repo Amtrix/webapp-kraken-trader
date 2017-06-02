@@ -56,6 +56,11 @@ hr {
     border-radius: 4px;
 }
 
+#bookings {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
 label
 {
     display: block;
@@ -65,5 +70,12 @@ label span
 {
     display: inline-block;
     text-align: right;
-    width: 150px;
+    width: 120px;
+    margin-right: 5px;
+}
+
+.form-control
+{
+    display: inline-block;
+    width: initial;
 }
